@@ -505,25 +505,38 @@
     </div>
 
     <script>
-        // Audio Context for sound effects
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Audio Context for sound effects (lazy initialization to avoid autoplay policy issues)
+        let audioContext = null;
+        
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
 
         // Sound effects
         function playBeep(frequency = 440, duration = 100) {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            try {
+                const ctx = getAudioContext();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = frequency;
-            oscillator.type = 'square';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration / 1000);
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+                
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + duration / 1000);
+            } catch (error) {
+                // Silently fail if audio context cannot be created
+                console.warn('Audio playback failed:', error);
+            }
         }
 
         function playSuccessSound() {
@@ -544,6 +557,7 @@
         // State management
         let generations = [];
         let history = [];
+        let animationIntervals = new Map(); // Track intervals for cleanup
 
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
@@ -648,8 +662,9 @@
                 const frameUrls = [];
                 
                 // Generate multiple frames with variations
+                const baseSeed = Date.now();
                 for (let i = 0; i < frames; i++) {
-                    const seed = Date.now() + i * 1000;
+                    const seed = baseSeed + i;
                     const encodedPrompt = encodeURIComponent(`${prompt}, frame ${i + 1}, variation ${i}`);
                     const frameUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${seed}`;
                     frameUrls.push(frameUrl);
@@ -724,6 +739,10 @@
         function updateGallery() {
             const gallery = document.getElementById('galleryGrid');
             
+            // Clear existing intervals to prevent memory leaks
+            animationIntervals.forEach(interval => clearInterval(interval));
+            animationIntervals.clear();
+            
             if (generations.length === 0) {
                 gallery.innerHTML = '<div class="empty-state">NO GENERATIONS YET<br>CREATE YOUR FIRST AI ART!</div>';
                 return;
@@ -742,19 +761,11 @@
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 512;
                     tempCanvas.height = 512;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    
-                    let currentFrame = 0;
-                    const interval = setInterval(() => {
-                        tempCtx.clearRect(0, 0, 512, 512);
-                        tempCtx.drawImage(gen.frames[currentFrame], 0, 0, 512, 512);
-                        currentFrame = (currentFrame + 1) % gen.frames.length;
-                    }, gen.delay);
-                    
                     tempCanvas.style.width = '100%';
                     tempCanvas.style.height = 'auto';
                     tempCanvas.style.border = '2px solid #00ffff';
                     tempCanvas.style.marginBottom = '10px';
+                    tempCanvas.dataset.genId = gen.id;
                     
                     mediaHtml = tempCanvas.outerHTML;
                 }
@@ -774,17 +785,19 @@
                 
                 gallery.appendChild(item);
                 
-                // For video, replace the canvas after appending
+                // For video, start animation after appending
                 if (gen.type === 'video') {
                     const canvasInGallery = item.querySelector('canvas');
                     if (canvasInGallery) {
                         const ctx = canvasInGallery.getContext('2d');
                         let currentFrame = 0;
-                        setInterval(() => {
+                        const interval = setInterval(() => {
                             ctx.clearRect(0, 0, 512, 512);
                             ctx.drawImage(gen.frames[currentFrame], 0, 0, 512, 512);
                             currentFrame = (currentFrame + 1) % gen.frames.length;
                         }, gen.delay);
+                        // Store interval for cleanup
+                        animationIntervals.set(`${gen.id}-gallery`, interval);
                     }
                 }
             });
@@ -898,9 +911,17 @@
             const index = generations.findIndex(g => g.id === id);
             if (index !== -1) {
                 const gen = generations[index];
+                // Clean up intervals
                 if (gen.interval) {
                     clearInterval(gen.interval);
                 }
+                // Clean up gallery animation interval
+                const galleryInterval = animationIntervals.get(`${id}-gallery`);
+                if (galleryInterval) {
+                    clearInterval(galleryInterval);
+                    animationIntervals.delete(`${id}-gallery`);
+                }
+                
                 generations.splice(index, 1);
                 
                 const historyIndex = history.findIndex(g => g.id === id);
