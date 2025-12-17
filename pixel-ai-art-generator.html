@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIXEL AI ART STUDIO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: #0a0a0a;
+            color: #00ff00;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* CRT Scanlines Effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.05),
+                rgba(0, 255, 0, 0.05) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(10px); }
+        }
+
+        /* Glitch effect */
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
+            25% { text-shadow: -2px 2px #ff00ff, 2px -2px #00ffff; }
+            50% { text-shadow: 2px -2px #ff00ff, -2px 2px #00ffff; }
+            75% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 4px solid #ff00ff;
+            background: rgba(255, 0, 255, 0.1);
+            box-shadow: 0 0 20px #ff00ff, inset 0 0 20px #ff00ff;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #ff00ff;
+            animation: glitch 1s infinite;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.6em;
+            color: #00ffff;
+            margin-top: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+            min-height: 70vh;
+        }
+
+        /* History Sidebar */
+        .history-sidebar {
+            border: 4px solid #00ffff;
+            background: rgba(0, 255, 255, 0.05);
+            padding: 15px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .history-title {
+            font-size: 0.8em;
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #00ffff;
+        }
+
+        .history-item {
+            border: 2px solid #00ff00;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .history-item:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px #00ff00;
+            transform: scale(1.05);
+        }
+
+        .history-item img {
+            width: 100%;
+            height: auto;
+            border: 2px solid #00ff00;
+            margin-bottom: 5px;
+        }
+
+        .history-prompt {
+            font-size: 0.5em;
+            color: #00ff00;
+            word-wrap: break-word;
+        }
+
+        /* Main Panel */
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-panel {
+            border: 4px solid #ffff00;
+            background: rgba(255, 255, 0, 0.05);
+            padding: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            border: 3px solid #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.7em;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 0, 0.3);
+            box-shadow: 0 0 15px #ffff00;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 0, 0.4);
+            box-shadow: 0 0 20px #ffff00, inset 0 0 10px #ffff00;
+            color: #000;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7em;
+            margin-bottom: 10px;
+            color: #ffff00;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7em;
+            outline: none;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            box-shadow: 0 0 15px #00ff00;
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .button {
+            padding: 15px 30px;
+            border: 3px solid #ff00ff;
+            background: rgba(255, 0, 255, 0.2);
+            color: #ff00ff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .button:hover {
+            background: rgba(255, 0, 255, 0.5);
+            box-shadow: 0 0 20px #ff00ff;
+            transform: scale(1.05);
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Gallery */
+        .gallery {
+            border: 4px solid #00ff00;
+            background: rgba(0, 255, 0, 0.05);
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .gallery-title {
+            font-size: 1em;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .gallery-item {
+            border: 3px solid #ff00ff;
+            background: rgba(255, 0, 255, 0.05);
+            padding: 15px;
+            position: relative;
+        }
+
+        .gallery-item img, .gallery-item video {
+            width: 100%;
+            height: auto;
+            border: 2px solid #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .gallery-item-info {
+            font-size: 0.5em;
+            color: #00ffff;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .gallery-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .small-button {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+            color: #ffff00;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .small-button:hover {
+            background: rgba(255, 255, 0, 0.3);
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 0.8em;
+            color: #ff00ff;
+            padding: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-message {
+            padding: 15px;
+            border: 3px solid;
+            margin-bottom: 20px;
+            font-size: 0.6em;
+            text-align: center;
+        }
+
+        .status-success {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+        }
+
+        .status-error {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border: 2px solid #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ffff;
+        }
+
+        /* Video options */
+        .video-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .video-option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .video-option-group label {
+            font-size: 0.6em;
+        }
+
+        input[type="number"], select {
+            padding: 10px;
+            border: 3px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.6em;
+            outline: none;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            background: #0a0a0a;
+            color: #00ff00;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.2em;
+            }
+
+            .subtitle {
+                font-size: 0.5em;
+            }
+
+            .history-sidebar {
+                max-height: 300px;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            font-size: 0.7em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ PIXEL AI ART STUDIO ⚡</h1>
+            <div class="subtitle">RETRO AI IMAGE & VIDEO GENERATION</div>
+            <div class="subtitle">NO API KEY REQUIRED • POWERED BY POLLINATIONS.AI</div>
+        </header>
+
+        <div class="main-content">
+            <!-- History Sidebar -->
+            <aside class="history-sidebar">
+                <div class="history-title">⚡ HISTORY ⚡</div>
+                <div id="historyList">
+                    <div class="empty-state">NO HISTORY YET<br>START CREATING!</div>
+                </div>
+            </aside>
+
+            <!-- Main Panel -->
+            <main class="main-panel">
+                <!-- Control Panel -->
+                <section class="control-panel">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="image">🖼️ IMAGE GEN</div>
+                        <div class="tab" data-tab="video">🎬 VIDEO GEN</div>
+                    </div>
+
+                    <div id="statusMessage"></div>
+
+                    <!-- Image Generation Tab -->
+                    <div class="tab-content active" id="imageTab">
+                        <div class="input-group">
+                            <label for="imagePrompt">ENTER YOUR PROMPT:</label>
+                            <textarea id="imagePrompt" placeholder="A futuristic cyberpunk city at night..."></textarea>
+                        </div>
+                        <div class="button-group">
+                            <button class="button" id="generateImageBtn">⚡ GENERATE IMAGE ⚡</button>
+                        </div>
+                    </div>
+
+                    <!-- Video Generation Tab -->
+                    <div class="tab-content" id="videoTab">
+                        <div class="input-group">
+                            <label for="videoPrompt">ENTER VIDEO PROMPT:</label>
+                            <textarea id="videoPrompt" placeholder="A serene landscape with moving clouds..."></textarea>
+                        </div>
+                        <div class="video-options">
+                            <div class="video-option-group">
+                                <label for="videoFrames">FRAMES:</label>
+                                <input type="number" id="videoFrames" value="5" min="3" max="10">
+                            </div>
+                            <div class="video-option-group">
+                                <label for="videoDelay">DELAY (MS):</label>
+                                <input type="number" id="videoDelay" value="500" min="200" max="2000" step="100">
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <button class="button" id="generateVideoBtn">⚡ GENERATE VIDEO ⚡</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Gallery -->
+                <section class="gallery">
+                    <h2 class="gallery-title">⚡ GENERATION GALLERY ⚡</h2>
+                    <div class="gallery-grid" id="galleryGrid">
+                        <div class="empty-state">NO GENERATIONS YET<br>CREATE YOUR FIRST AI ART!</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Audio Context for sound effects (lazy initialization to avoid autoplay policy issues)
+        let audioContext = null;
+        
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        // Sound effects
+        function playBeep(frequency = 440, duration = 100) {
+            try {
+                const ctx = getAudioContext();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+            
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+                
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + duration / 1000);
+            } catch (error) {
+                // Silently fail if audio context cannot be created
+                console.warn('Audio playback failed:', error);
+            }
+        }
+
+        function playSuccessSound() {
+            playBeep(523.25, 100); // C5
+            setTimeout(() => playBeep(659.25, 100), 100); // E5
+            setTimeout(() => playBeep(783.99, 150), 200); // G5
+        }
+
+        function playErrorSound() {
+            playBeep(200, 200);
+            setTimeout(() => playBeep(150, 300), 200);
+        }
+
+        function playClickSound() {
+            playBeep(800, 50);
+        }
+
+        // State management
+        let generations = [];
+        let history = [];
+        let animationIntervals = new Map(); // Track intervals for cleanup
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                playClickSound();
+                
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                
+                this.classList.add('active');
+                const tabName = this.dataset.tab;
+                document.getElementById(tabName + 'Tab').classList.add('active');
+            });
+        });
+
+        // Status message functions
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Image generation
+        document.getElementById('generateImageBtn').addEventListener('click', async function() {
+            playClickSound();
+            
+            const prompt = document.getElementById('imagePrompt').value.trim();
+            if (!prompt) {
+                showStatus('⚠️ PLEASE ENTER A PROMPT!', 'error');
+                playErrorSound();
+                return;
+            }
+
+            this.disabled = true;
+            this.textContent = '⚡ GENERATING...';
+            
+            try {
+                // Using Pollinations.ai API for image generation
+                const encodedPrompt = encodeURIComponent(prompt);
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${Date.now()}`;
+                
+                // Create image element to test loading
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                img.onload = function() {
+                    const generation = {
+                        id: Date.now(),
+                        type: 'image',
+                        prompt: prompt,
+                        url: imageUrl,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    
+                    generations.unshift(generation);
+                    history.unshift(generation);
+                    
+                    updateGallery();
+                    updateHistory();
+                    
+                    showStatus('✅ IMAGE GENERATED SUCCESSFULLY!', 'success');
+                    playSuccessSound();
+                };
+                
+                img.onerror = function() {
+                    showStatus('❌ FAILED TO GENERATE IMAGE!', 'error');
+                    playErrorSound();
+                };
+                
+                img.src = imageUrl;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ ERROR: ' + error.message, 'error');
+                playErrorSound();
+            } finally {
+                this.disabled = false;
+                this.textContent = '⚡ GENERATE IMAGE ⚡';
+            }
+        });
+
+        // Video generation (slideshow from multiple images)
+        document.getElementById('generateVideoBtn').addEventListener('click', async function() {
+            playClickSound();
+            
+            const prompt = document.getElementById('videoPrompt').value.trim();
+            const frames = parseInt(document.getElementById('videoFrames').value);
+            const delay = parseInt(document.getElementById('videoDelay').value);
+            
+            if (!prompt) {
+                showStatus('⚠️ PLEASE ENTER A PROMPT!', 'error');
+                playErrorSound();
+                return;
+            }
+
+            this.disabled = true;
+            this.textContent = '⚡ GENERATING FRAMES...';
+            
+            try {
+                const frameUrls = [];
+                
+                // Generate multiple frames with variations
+                const baseSeed = Date.now();
+                for (let i = 0; i < frames; i++) {
+                    const seed = baseSeed + i;
+                    const encodedPrompt = encodeURIComponent(`${prompt}, frame ${i + 1}, variation ${i}`);
+                    const frameUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${seed}`;
+                    frameUrls.push(frameUrl);
+                    
+                    this.textContent = `⚡ FRAME ${i + 1}/${frames}...`;
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Create canvas for video/GIF simulation
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                // Load all frames
+                const loadedImages = await Promise.all(
+                    frameUrls.map(url => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            img.onload = () => resolve(img);
+                            img.onerror = reject;
+                            img.src = url;
+                        });
+                    })
+                );
+                
+                // Create animated canvas element
+                const videoElement = document.createElement('canvas');
+                videoElement.width = 512;
+                videoElement.height = 512;
+                const videoCtx = videoElement.getContext('2d');
+                
+                let currentFrame = 0;
+                const animationInterval = setInterval(() => {
+                    videoCtx.clearRect(0, 0, 512, 512);
+                    videoCtx.drawImage(loadedImages[currentFrame], 0, 0, 512, 512);
+                    currentFrame = (currentFrame + 1) % frames;
+                }, delay);
+                
+                const generation = {
+                    id: Date.now(),
+                    type: 'video',
+                    prompt: prompt,
+                    element: videoElement,
+                    interval: animationInterval,
+                    frames: loadedImages,
+                    delay: delay,
+                    timestamp: new Date().toLocaleString()
+                };
+                
+                generations.unshift(generation);
+                history.unshift(generation);
+                
+                updateGallery();
+                updateHistory();
+                
+                showStatus('✅ VIDEO GENERATED SUCCESSFULLY!', 'success');
+                playSuccessSound();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ ERROR: ' + error.message, 'error');
+                playErrorSound();
+            } finally {
+                this.disabled = false;
+                this.textContent = '⚡ GENERATE VIDEO ⚡';
+            }
+        });
+
+        // Update gallery
+        function updateGallery() {
+            const gallery = document.getElementById('galleryGrid');
+            
+            // Clear existing intervals to prevent memory leaks
+            animationIntervals.forEach(interval => clearInterval(interval));
+            animationIntervals.clear();
+            
+            if (generations.length === 0) {
+                gallery.innerHTML = '<div class="empty-state">NO GENERATIONS YET<br>CREATE YOUR FIRST AI ART!</div>';
+                return;
+            }
+            
+            gallery.innerHTML = '';
+            
+            generations.forEach(gen => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                
+                let mediaHtml = '';
+                if (gen.type === 'image') {
+                    mediaHtml = `<img src="${gen.url}" alt="${gen.prompt}" loading="lazy">`;
+                } else if (gen.type === 'video') {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 512;
+                    tempCanvas.height = 512;
+                    tempCanvas.style.width = '100%';
+                    tempCanvas.style.height = 'auto';
+                    tempCanvas.style.border = '2px solid #00ffff';
+                    tempCanvas.style.marginBottom = '10px';
+                    tempCanvas.dataset.genId = gen.id;
+                    
+                    mediaHtml = tempCanvas.outerHTML;
+                }
+                
+                item.innerHTML = `
+                    ${mediaHtml}
+                    <div class="gallery-item-info">
+                        <strong>PROMPT:</strong> ${gen.prompt}<br>
+                        <strong>TYPE:</strong> ${gen.type.toUpperCase()}<br>
+                        <strong>TIME:</strong> ${gen.timestamp}
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="small-button download-btn" data-id="${gen.id}">⬇ DOWNLOAD</button>
+                        <button class="small-button delete-btn" data-id="${gen.id}">✖ DELETE</button>
+                    </div>
+                `;
+                
+                gallery.appendChild(item);
+                
+                // For video, start animation after appending
+                if (gen.type === 'video') {
+                    const canvasInGallery = item.querySelector('canvas');
+                    if (canvasInGallery) {
+                        const ctx = canvasInGallery.getContext('2d');
+                        let currentFrame = 0;
+                        const interval = setInterval(() => {
+                            ctx.clearRect(0, 0, 512, 512);
+                            ctx.drawImage(gen.frames[currentFrame], 0, 0, 512, 512);
+                            currentFrame = (currentFrame + 1) % gen.frames.length;
+                        }, gen.delay);
+                        // Store interval for cleanup
+                        animationIntervals.set(`${gen.id}-gallery`, interval);
+                    }
+                }
+            });
+            
+            // Add event listeners for buttons
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    playClickSound();
+                    const id = parseInt(this.dataset.id);
+                    downloadGeneration(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    playClickSound();
+                    const id = parseInt(this.dataset.id);
+                    deleteGeneration(id);
+                });
+            });
+        }
+
+        // Update history
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="empty-state">NO HISTORY YET<br>START CREATING!</div>';
+                return;
+            }
+            
+            historyList.innerHTML = '';
+            
+            history.slice(0, 10).forEach(gen => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                
+                if (gen.type === 'image') {
+                    item.innerHTML = `
+                        <img src="${gen.url}" alt="${gen.prompt}">
+                        <div class="history-prompt">${gen.prompt.substring(0, 50)}...</div>
+                    `;
+                } else {
+                    // For video, show first frame
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 200;
+                    canvas.height = 200;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(gen.frames[0], 0, 0, 200, 200);
+                    
+                    item.innerHTML = `
+                        <img src="${canvas.toDataURL()}" alt="${gen.prompt}">
+                        <div class="history-prompt">🎬 ${gen.prompt.substring(0, 40)}...</div>
+                    `;
+                }
+                
+                item.addEventListener('click', function() {
+                    playClickSound();
+                    // Scroll to the generation in gallery
+                    const galleryItems = document.querySelectorAll('.gallery-item');
+                    const index = generations.findIndex(g => g.id === gen.id);
+                    if (index !== -1 && galleryItems[index]) {
+                        galleryItems[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        galleryItems[index].style.animation = 'pulse 1s 3';
+                    }
+                });
+                
+                historyList.appendChild(item);
+            });
+        }
+
+        // Download generation
+        function downloadGeneration(id) {
+            const gen = generations.find(g => g.id === id);
+            if (!gen) return;
+            
+            try {
+                if (gen.type === 'image') {
+                    const link = document.createElement('a');
+                    link.href = gen.url;
+                    link.download = `pixel-ai-image-${gen.id}.png`;
+                    link.click();
+                } else if (gen.type === 'video') {
+                    // Download first frame as representative
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512;
+                    canvas.height = 512;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(gen.frames[0], 0, 0, 512, 512);
+                    
+                    canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `pixel-ai-video-frame-${gen.id}.png`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    });
+                }
+                
+                showStatus('✅ DOWNLOAD STARTED!', 'success');
+                playSuccessSound();
+            } catch (error) {
+                showStatus('❌ DOWNLOAD FAILED!', 'error');
+                playErrorSound();
+            }
+        }
+
+        // Delete generation
+        function deleteGeneration(id) {
+            const index = generations.findIndex(g => g.id === id);
+            if (index !== -1) {
+                const gen = generations[index];
+                // Clean up intervals
+                if (gen.interval) {
+                    clearInterval(gen.interval);
+                }
+                // Clean up gallery animation interval
+                const galleryInterval = animationIntervals.get(`${id}-gallery`);
+                if (galleryInterval) {
+                    clearInterval(galleryInterval);
+                    animationIntervals.delete(`${id}-gallery`);
+                }
+                
+                generations.splice(index, 1);
+                
+                const historyIndex = history.findIndex(g => g.id === id);
+                if (historyIndex !== -1) {
+                    history.splice(historyIndex, 1);
+                }
+                
+                updateGallery();
+                updateHistory();
+                
+                showStatus('✅ DELETED!', 'success');
+                playSuccessSound();
+            }
+        }
+
+        // Initialize
+        console.log('%c⚡ PIXEL AI ART STUDIO INITIALIZED ⚡', 'color: #ff00ff; font-size: 20px; font-family: monospace;');
+        console.log('%cPowered by Pollinations.ai', 'color: #00ff00; font-size: 12px; font-family: monospace;');
+    </script>
+</body>
+</html>
